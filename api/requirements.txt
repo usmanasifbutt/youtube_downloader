@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+redis
+yt-dlp
+ffmpeg-python
+boto3
+pydantic-settings
