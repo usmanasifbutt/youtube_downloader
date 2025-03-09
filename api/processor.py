@@ -1,11 +1,20 @@
 import os
 import redis
-import yt_dlp
 import ffmpeg
 import tempfile
 from s3 import upload_to_s3
+from yt_dlp import YoutubeDL
 
 redis_client = redis.Redis(host="localhost", port=6379, decode_responses=True)
+
+def get_download_url(url: str):
+    ydl_opts = {
+        "format": "best",
+        "outtmpl": "downloads/%(title)s.%(ext)s",
+    }
+    with YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+    return info["url"], info["title"]
 
 def process_video(url: str, start: str, end: str, task_id: str, action: str = "trim"):
 
@@ -34,7 +43,7 @@ def process_video(url: str, start: str, end: str, task_id: str, action: str = "t
             "outtmpl": video_path,
             "progress_hooks": [download_progress_hook],
         }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        with YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
         
         if action != "download":

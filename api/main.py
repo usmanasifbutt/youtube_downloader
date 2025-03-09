@@ -1,12 +1,13 @@
 import redis
+import requests
 from fastapi import FastAPI, BackgroundTasks
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
 
 from utils import validate_request_data, get_video_id
 from config import settings
-from processor import process_video
+from processor import process_video, get_download_url
 
 app = FastAPI()
 app.add_middleware(
@@ -20,6 +21,30 @@ app.add_middleware(
 # Redis client to store progress (you can use a database instead)
 redis_client = redis.Redis(host="localhost", port=6379, decode_responses=True)
 
+
+@app.get("/api/download")
+async def download_video(url: str):
+    try:
+        # Get the direct download URL and title
+        download_url, title = get_download_url(url)
+        
+        # Make a streaming request to fetch video data
+        response = requests.get(download_url, stream=True)
+        response.raise_for_status()
+        
+        # Create a StreamingResponse to stream the video directly to the client
+        return StreamingResponse(
+            response.iter_content(chunk_size=1024),
+            media_type="video/mp4",
+            headers={
+                "Content-Disposition": f'attachment; filename="{title}.mp4"'
+            }
+        )
+    except Exception as e:
+        print(f"Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to download video")
+
+
 @app.get("/api/trim")
 async def trim_video(url: str, start: str, end: str, background_tasks: BackgroundTasks):
     validate_request_data(url, start, end)
@@ -30,6 +55,7 @@ async def trim_video(url: str, start: str, end: str, background_tasks: Backgroun
     
     background_tasks.add_task(process_video, url, start, end, task_id)
     return JSONResponse({"task_id": task_id})
+
 
 @app.get("/api/progress/{task_id}")
 def get_progress(task_id: str):
