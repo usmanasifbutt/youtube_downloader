@@ -69,10 +69,6 @@ DOWNLOAD_PATH=./downloads
 
 Start the FastAPI server:
 
-bash
-
-CopyEdit
-
 ```
 uvicorn main:app --reload
 ``` 

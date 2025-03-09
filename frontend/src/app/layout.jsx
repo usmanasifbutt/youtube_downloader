@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Youtube Video Trimmer",
+  title: "Youtube Video Downloader",
   description: "Trim & Download youtube video for free but just pasting the url",
 };
 

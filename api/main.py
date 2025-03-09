@@ -6,8 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse, \
     FileResponse
 
-from utils import validate_request_data, get_video_id
 from config import settings
+from file_manager import clean_temp_downloads
+from utils import validate_request_data, get_video_id
 from processor import process_video, get_download_url
 
 app = FastAPI()
@@ -47,6 +48,9 @@ async def download_video(url: str):
 
 @app.get("/api/trim")
 async def trim_video(url: str, start: str, end: str, background_tasks: BackgroundTasks):
+    # Clean up previous files
+    clean_temp_downloads()
+
     validate_request_data(url, start, end)
     video_id = get_video_id(url)
     

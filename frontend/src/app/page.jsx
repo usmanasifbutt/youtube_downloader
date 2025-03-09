@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Toaster, toast } from "react-hot-toast";
 import { formatTimeInput, parseTimeInput, isAbsoluteUrl } from "@/utils";
 import VideoPlayer from "@/components/VideoPlayer";
+import { YoutubeIcon } from "@/icons";
 
 export default function YouTubeCutterForm() {
   const [loading, setLoading] = useState(false);
@@ -150,8 +151,9 @@ export default function YouTubeCutterForm() {
       <Toaster position="top-right" reverseOrder={false} />
       <Card className="w-full max-w-xl shadow-lg">
         <CardContent className="p-6">
-          <h1 className="text-2xl font-bold text-center mb-4 text-gray-800">
-            YT Cutter
+          <h1 className="text-2xl font-bold text-center text-gray-800 flex items-center justify-center space-x-2">
+            <YoutubeIcon />
+            <span>Downloader</span>
           </h1>
           <p className="text-center text-sm text-gray-600 mb-6">
             Extract your favorite scenes or download the entire YouTube video.
@@ -172,9 +174,6 @@ export default function YouTubeCutterForm() {
                 onChange={handleChange}
                 className="w-full"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Enter the full YouTube video URL.
-              </p>
             </div>
             <Button
               type="button"
