@@ -2,6 +2,8 @@ import os
 import redis
 import ffmpeg
 import tempfile
+import shutil
+from config import settings
 from s3 import upload_to_s3
 from yt_dlp import YoutubeDL
 
@@ -56,7 +58,12 @@ def process_video(url: str, start: str, end: str, task_id: str, action: str = "t
             ffmpeg_progress_hook(stdout.decode('utf-8').split('\n'), stderr.decode('utf-8'), task_id)
             
         redis_client.set(task_id, "99")  # Update progress to 100% when done
-
-        s3_key = f"trimmed_videos/{task_id}_trimmed.mp4"
-        presigned_url = upload_to_s3(output_path, s3_key)
-        redis_client.set(task_id, presigned_url)  # Store download URL
+        
+        if settings.ENABLE_S3:
+            s3_key = f"trimmed_videos/{task_id}_trimmed.mp4"
+            presigned_url = upload_to_s3(output_path, s3_key)
+            redis_client.set(task_id, presigned_url)  # Store download URL
+        else:
+            temp_path = os.path.join(settings.CUSTOM_TEMP_DIR, f"{task_id}_trimmed.mp4")
+            shutil.move(output_path, temp_path)
+            redis_client.set(task_id, f"/temp-downloads/{task_id}_trimmed.mp4")

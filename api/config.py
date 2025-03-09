@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     ALLOWED_HEADERS: str = "*"
     ALLOWED_CREDENTIALS: bool = True
     
+    ENABLE_S3: bool = False
+    # Add this path to gitignore
+    CUSTOM_TEMP_DIR: str = "./temp-downloads"
+ 
     model_config = SettingsConfigDict(env_file=".env")
 
 settings = Settings()

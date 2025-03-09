@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Toaster, toast } from "react-hot-toast";
-import { formatTimeInput, parseTimeInput } from "@/utils";
+import { formatTimeInput, parseTimeInput, isAbsoluteUrl } from "@/utils";
 import VideoPlayer from "@/components/VideoPlayer";
 
 export default function YouTubeCutterForm() {
@@ -32,8 +32,9 @@ export default function YouTubeCutterForm() {
 
   const downloadVideo = (downloadUrl, fileName = "video.mp4") => {
     const link = document.createElement("a");
-    link.target = "_blank";
-    link.href = downloadUrl;
+    link.href = isAbsoluteUrl(downloadUrl)
+      ? downloadUrl
+      : `${process.env.NEXT_PUBLIC_API_URL}${downloadUrl}`;
     link.download = fileName;
     document.body.appendChild(link);
     link.click();
@@ -43,7 +44,9 @@ export default function YouTubeCutterForm() {
   const pollProgress = (taskId) => {
     const interval = setInterval(async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/progress/${taskId}`);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/progress/${taskId}`
+        );
         const data = await response.json();
 
         if (data.status === "completed") {
@@ -57,7 +60,9 @@ export default function YouTubeCutterForm() {
           setProgress(data.progress || 1);
         }
       } catch (error) {
-        toast.error("An error occurred while fetching current progress of video processing.");
+        toast.error(
+          "An error occurred while fetching current progress of video processing."
+        );
         console.log(error);
         setLoading(false);
       }
@@ -79,7 +84,9 @@ export default function YouTubeCutterForm() {
     try {
       setLoading(true);
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/trim?url=${encodeURIComponent(url)}&start=${startTime}&end=${endTime}`
+        `${process.env.NEXT_PUBLIC_API_URL}/api/trim?url=${encodeURIComponent(
+          url
+        )}&start=${startTime}&end=${endTime}`
       );
 
       if (response.ok) {
@@ -87,7 +94,9 @@ export default function YouTubeCutterForm() {
         pollProgress(task_id);
       }
     } catch (error) {
-      toast.error("An error occurred while processing your video. Please try again.");
+      toast.error(
+        "An error occurred while processing your video. Please try again."
+      );
       console.log(error);
       setLoading(false);
     }
@@ -102,7 +111,11 @@ export default function YouTubeCutterForm() {
 
     try {
       setFullDownloadLoading(true); // Start loading
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/download?url=${encodeURIComponent(url)}`);
+      const response = await fetch(
+        `${
+          process.env.NEXT_PUBLIC_API_URL
+        }/api/download?url=${encodeURIComponent(url)}`
+      );
       if (response.ok) {
         const blob = await response.blob();
         const downloadUrl = URL.createObjectURL(blob);
@@ -111,6 +124,7 @@ export default function YouTubeCutterForm() {
 
         // Extract filename from headers or use a default
         const contentDisposition = response.headers.get("Content-Disposition");
+
         const filename = contentDisposition
           ? contentDisposition.split("filename=")[1].replace(/"/g, "")
           : "video.mp4";
@@ -136,7 +150,9 @@ export default function YouTubeCutterForm() {
       <Toaster position="top-right" reverseOrder={false} />
       <Card className="w-full max-w-xl shadow-lg">
         <CardContent className="p-6">
-          <h1 className="text-2xl font-bold text-center mb-4 text-gray-800">YT Cutter</h1>
+          <h1 className="text-2xl font-bold text-center mb-4 text-gray-800">
+            YT Cutter
+          </h1>
           <p className="text-center text-sm text-gray-600 mb-6">
             Extract your favorite scenes or download the entire YouTube video.
           </p>
@@ -145,7 +161,9 @@ export default function YouTubeCutterForm() {
               <VideoPlayer url={formData.url} />
             </div>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">YouTube Video URL</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                YouTube Video URL
+              </label>
               <Input
                 type="text"
                 name="url"
@@ -154,7 +172,9 @@ export default function YouTubeCutterForm() {
                 onChange={handleChange}
                 className="w-full"
               />
-              <p className="text-xs text-gray-500 mt-1">Enter the full YouTube video URL.</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Enter the full YouTube video URL.
+              </p>
             </div>
             <Button
               type="button"
@@ -166,7 +186,9 @@ export default function YouTubeCutterForm() {
             </Button>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Start Time
+                </label>
                 <Input
                   type="text"
                   name="startTime"
@@ -178,7 +200,9 @@ export default function YouTubeCutterForm() {
                 <p className="text-xs text-gray-500 mt-1">Format: HH:MM:SS</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">End Time</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  End Time
+                </label>
                 <Input
                   type="text"
                   name="endTime"
@@ -193,7 +217,9 @@ export default function YouTubeCutterForm() {
             {progress || loading ? (
               <div className="mb-4">
                 <Progress value={progress} className="w-full h-5" />
-                <p className="text-xs text-gray-500 mt-1 text-center">Processing ...</p>
+                <p className="text-xs text-gray-500 mt-1 text-center">
+                  Processing ...
+                </p>
               </div>
             ) : (
               <Button type="submit" className="w-full mb-2" disabled={loading}>

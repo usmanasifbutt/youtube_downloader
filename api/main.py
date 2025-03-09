@@ -1,9 +1,10 @@
 import redis
 import requests
 from fastapi import FastAPI, BackgroundTasks
-from fastapi.responses import JSONResponse, StreamingResponse
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, StreamingResponse, \
+    FileResponse
 
 from utils import validate_request_data, get_video_id
 from config import settings
@@ -16,6 +17,7 @@ app.add_middleware(
     allow_credentials=settings.ALLOWED_CREDENTIALS,
     allow_methods=[settings.ALLOWED_METHODS],
     allow_headers=[settings.ALLOWED_HEADERS],
+    expose_headers=["Content-Disposition"]
 )
 
 # Redis client to store progress (you can use a database instead)
@@ -31,8 +33,6 @@ async def download_video(url: str):
         # Make a streaming request to fetch video data
         response = requests.get(download_url, stream=True)
         response.raise_for_status()
-        
-        # Create a StreamingResponse to stream the video directly to the client
         return StreamingResponse(
             response.iter_content(chunk_size=1024),
             media_type="video/mp4",
@@ -52,7 +52,7 @@ async def trim_video(url: str, start: str, end: str, background_tasks: Backgroun
     
     task_id = str(video_id)
     redis_client.set(task_id, "0")
-    
+
     background_tasks.add_task(process_video, url, start, end, task_id)
     return JSONResponse({"task_id": task_id})
 
@@ -77,3 +77,22 @@ def get_progress(task_id: str):
     
     # Once the processing is completed, the progress will be a download URL
     return JSONResponse({"download_url": progress, "status": "completed"})
+
+if not settings.ENABLE_S3:
+    import os
+    os.makedirs(settings.CUSTOM_TEMP_DIR, exist_ok=True)
+
+    @app.get("/temp-downloads/{file_name}")
+    async def download_temp_file(file_name: str):
+        file_path = os.path.join(settings.CUSTOM_TEMP_DIR, file_name)
+        
+        if not os.path.isfile(file_path):
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Force download by setting Content-Disposition header
+        return FileResponse(
+            file_path,
+            media_type='application/octet-stream',
+            filename=file_name,
+            headers={"Content-Disposition": f"attachment; filename={file_name}"}
+        )

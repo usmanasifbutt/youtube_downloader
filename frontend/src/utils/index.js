@@ -35,3 +35,7 @@ export const formatTimeInput = (value) => {
 
   return value;
 };
+
+export const isAbsoluteUrl = (url) => {
+  return url.startsWith("http://") || url.startsWith("https://");
+}
