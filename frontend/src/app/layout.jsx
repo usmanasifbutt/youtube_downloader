@@ -1,4 +1,3 @@
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
